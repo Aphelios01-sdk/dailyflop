@@ -111,8 +111,8 @@ class KibbleStreamWorker(BaseStreamWorker):
             return
 
         now = time.time()
-        # Debounce: only run fast cycle if new job arrived, or at most once every 30s
-        min_interval = 10 if has_new_job else 30
+        # Debounce: run fast cycle if new job arrived at most every 45s, or 60s for other activities
+        min_interval = 45 if has_new_job else 60
         if now - self.last_work_ts < min_interval:
             return
 
@@ -160,7 +160,7 @@ class TclkOffersStreamWorker(BaseStreamWorker):
             return
 
         now = time.time()
-        if now - self.last_check_ts < 20:
+        if now - self.last_check_ts < 45:
             return
 
         self.last_check_ts = now

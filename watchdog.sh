@@ -21,7 +21,7 @@ fi
 # 3. Check and resurrect stream_listener if dead
 if ! pgrep -f "stream_listener.py" > /dev/null; then
     echo "[$DATE] [ALERT] stream_listener not found! Resurrecting service..." >> "$LOG"
-    setsid python3 "$DIR/stream_listener.py" >> "$DIR/stream_service.log" 2>&1 < /dev/null &
+    setsid python3 -u "$DIR/stream_listener.py" >> "$DIR/stream_service.log" 2>&1 < /dev/null &
     sleep 2
     echo "[$DATE] [ALERT] stream_listener restarted with PID $(pgrep -f "stream_listener.py" | head -n 1)." >> "$LOG"
 else

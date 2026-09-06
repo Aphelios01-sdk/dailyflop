@@ -177,6 +177,30 @@ class TclkOffersStreamWorker(BaseStreamWorker):
         except Exception as e:
             log(self.name, f"TCLK stream handler error: {e}")
 
+class DailyflopRoomStreamWorker(BaseStreamWorker):
+    def __init__(self, client: TechnocoreClient, config: Config):
+        super().__init__("DailyflopRoomListener", "d-dailyflop", client, config)
+        self.last_check_ts = 0
+
+    def on_batch(self, messages: list):
+        peer_msgs = [m for m in messages if m.get("from") != self.config.did]
+        if not peer_msgs:
+            return
+
+        now = time.time()
+        if now - self.last_check_ts < 5:
+            return
+
+        self.last_check_ts = now
+        sender = peer_msgs[-1].get("from", "")
+        log(self.name, f"New public inquiry in /r/d-dailyflop from <{sender[-8:]}>! Generating response...")
+        try:
+            from room_service import process_room_messages
+            count = process_room_messages(self.client, self.config)
+            log(self.name, f"RoomService processed {count} message(s).")
+        except Exception as e:
+            log(self.name, f"RoomService error: {e}")
+
 def main():
     log("MAIN", "Initializing Technocore Real-Time Stream Listeners...")
     try:
@@ -190,13 +214,14 @@ def main():
     workers = [
         KibbleStreamWorker(client, cfg),
         MailboxStreamWorker(client, cfg),
-        TclkOffersStreamWorker(client, cfg)
+        TclkOffersStreamWorker(client, cfg),
+        DailyflopRoomStreamWorker(client, cfg)
     ]
 
     for w in workers:
         w.start()
 
-    log("MAIN", "All 3 Stream Listeners ACTIVE and long-polling Technocore!")
+    log("MAIN", "All 4 Stream Listeners ACTIVE and long-polling Technocore!")
     try:
         while True:
             time.sleep(60)

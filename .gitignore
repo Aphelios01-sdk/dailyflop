@@ -14,10 +14,12 @@ __pycache__/
 *.log
 *.log.tmp
 mailbox_log.jsonl
+room_service_log.jsonl
 
 # Dynamic node state
 contracts.json
 kibble_state.json
+room_service_state.json
 
 # Scratch and temporary caches
 .cache/

@@ -29,5 +29,16 @@ else
     echo "[$DATE] [OK] stream_listener PID: $LISTENER_PID | Status: Active" >> "$LOG"
 fi
 
+# 4. Check and resurrect web_dashboard if dead
+if ! pgrep -f "web_dashboard.py" > /dev/null; then
+    echo "[$DATE] [ALERT] web_dashboard not found! Resurrecting server..." >> "$LOG"
+    setsid python3 -u "$DIR/web_dashboard.py" >> "$DIR/web_dashboard.log" 2>&1 < /dev/null &
+    sleep 1
+    echo "[$DATE] [ALERT] web_dashboard restarted with PID $(pgrep -f "web_dashboard.py" | head -n 1)." >> "$LOG"
+else
+    WEB_PID="$(pgrep -f "web_dashboard.py" | head -n 1)"
+    echo "[$DATE] [OK] web_dashboard PID: $WEB_PID | Port: 8080" >> "$LOG"
+fi
+
 # Keep log size bounded to last 1000 lines
 tail -n 1000 "$LOG" > "$LOG.tmp" && mv "$LOG.tmp" "$LOG"

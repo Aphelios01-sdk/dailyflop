@@ -15,6 +15,10 @@ __pycache__/
 *.log.tmp
 mailbox_log.jsonl
 
+# Dynamic node state
+contracts.json
+kibble_state.json
+
 # Scratch and temporary caches
 .cache/
 scratch/

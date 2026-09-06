@@ -72,9 +72,10 @@ class TechnocoreClient:
         query_str = f"?{urllib.parse.urlencode(params)}" if params else ""
         url = f"{self.config.url}/r/{room}{query_str}"
 
+        timeout = max(15, (wait or 0) + 10)
         req = urllib.request.Request(url)
         try:
-            with urllib.request.urlopen(req, timeout=15) as resp:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
                 raw_body = resp.read().decode("utf-8")
                 if as_json:
                     try:

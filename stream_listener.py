@@ -61,59 +61,86 @@ class BaseStreamWorker(threading.Thread):
 
                 # Server long-polling with wait=10
                 res = self.client.read_room(self.room, since=self.last_seq, wait=10, as_json=True)
-                if res.get("status") != 200:
-                    time.sleep(2)
+                status = res.get("status")
+                if status == 429:
+                    log(self.name, "429 Rate limited at edge! Backing off for 65 seconds...")
+                    time.sleep(65)
+                    continue
+                if status != 200:
+                    time.sleep(5)
                     continue
 
                 data = res.get("data", {})
                 msgs = data.get("messages", [])
 
                 if msgs:
-                    for m in msgs:
-                        seq = m.get("seq")
-                        if self.last_seq is None or seq > self.last_seq:
-                            self.on_message(m)
-                            self.last_seq = seq
+                    # Update sequence cursor to the highest observed
+                    self.last_seq = msgs[-1].get("seq")
+                    self.on_batch(msgs)
                 else:
-                    # Timeout reached with no new messages, normal loop
-                    time.sleep(0.5)
+                    time.sleep(1)
 
             except Exception as e:
                 log(self.name, f"Exception in loop: {e}")
-                time.sleep(3)
+                time.sleep(5)
 
-    def on_message(self, message: dict):
+    def on_batch(self, messages: list):
         pass
 
 class KibbleStreamWorker(BaseStreamWorker):
     def __init__(self, client: TechnocoreClient, config: Config):
         super().__init__("KibbleListener", "kibble", client, config)
+        self.last_work_ts = 0
 
-    def on_message(self, message: dict):
-        text = message.get("text", "")
-        sender = message.get("from", "")
-        seq = message.get("seq")
+    def on_batch(self, messages: list):
+        has_new_job = False
+        has_relevant_activity = False
 
-        if sender == self.config.did:
-            return  # Skip own messages
+        for m in messages:
+            if m.get("from") == self.config.did:
+                continue
+            txt = m.get("text", "")
+            if txt.startswith("JOB v1 |"):
+                has_new_job = True
+                has_relevant_activity = True
+                break
+            elif txt.startswith("RESULT v1 |"):
+                has_relevant_activity = True
 
-        if text.startswith("JOB v1 |") or text.startswith("RESULT v1 |"):
-            log(self.name, f"New activity on seq {seq}: {text[:70]}...")
-            try:
-                from kibble_worker import process_kibble_work
-                summary = process_kibble_work(self.client, self.config)
-                log(self.name, f"Kibble fast cycle result: {summary}")
-            except Exception as e:
-                log(self.name, f"Error processing kibble work: {e}")
+        if not has_relevant_activity:
+            return
+
+        now = time.time()
+        # Debounce: only run fast cycle if new job arrived, or at most once every 30s
+        min_interval = 10 if has_new_job else 30
+        if now - self.last_work_ts < min_interval:
+            return
+
+        self.last_work_ts = now
+        log(self.name, f"Triggering kibble cycle (new_job={has_new_job})...")
+        try:
+            from kibble_worker import process_kibble_work
+            summary = process_kibble_work(self.client, self.config)
+            log(self.name, f"Kibble fast cycle result: {summary}")
+        except Exception as e:
+            log(self.name, f"Error processing kibble work: {e}")
 
 class MailboxStreamWorker(BaseStreamWorker):
     def __init__(self, client: TechnocoreClient, config: Config):
         super().__init__("MailboxListener", config.mailbox, client, config)
+        self.last_check_ts = 0
 
-    def on_message(self, message: dict):
-        sender = message.get("from", "")
-        if sender == self.config.did:
+    def on_batch(self, messages: list):
+        peer_msgs = [m for m in messages if m.get("from") != self.config.did]
+        if not peer_msgs:
             return
+
+        now = time.time()
+        if now - self.last_check_ts < 5:
+            return
+
+        self.last_check_ts = now
+        sender = peer_msgs[-1].get("from", "")
         log(self.name, f"Direct message received from <{sender[-8:]}>! Triggering auto-reply...")
         try:
             from mailbox_responder import process_mailbox
@@ -127,28 +154,28 @@ class TclkOffersStreamWorker(BaseStreamWorker):
         super().__init__("TclkListener", "tclk-offers", client, config)
         self.last_check_ts = 0
 
-    def on_message(self, message: dict):
-        text = message.get("text", "")
-        sender = message.get("from", "")
-
-        if sender == self.config.did:
+    def on_batch(self, messages: list):
+        peer_msgs = [m for m in messages if m.get("from") != self.config.did]
+        if not peer_msgs:
             return
 
         now = time.time()
-        # Rate-limit checks to avoid slamming MCP on dense batches
-        if now - self.last_check_ts > 4:
-            self.last_check_ts = now
+        if now - self.last_check_ts < 20:
+            return
+
+        self.last_check_ts = now
+        log(self.name, f"Detected {len(peer_msgs)} peer offer activity. Running TCLK cycle...")
+        try:
+            from tclk_worker import TclkMcpClient, accept_open_offers, resolve_locked_contracts, check_and_lock_accepted_offers
+            mcp = TclkMcpClient(self.config)
             try:
-                from tclk_worker import TclkMcpClient, accept_open_offers, resolve_locked_contracts, check_and_lock_accepted_offers
-                mcp = TclkMcpClient(self.config)
-                try:
-                    resolve_locked_contracts(mcp, self.config)
-                    check_and_lock_accepted_offers(mcp, self.config)
-                    accept_open_offers(mcp, self.config, target_asset="ANY", max_count=1)
-                finally:
-                    mcp.close()
-            except Exception as e:
-                log(self.name, f"TCLK stream handler error: {e}")
+                resolve_locked_contracts(mcp, self.config)
+                check_and_lock_accepted_offers(mcp, self.config)
+                accept_open_offers(mcp, self.config, target_asset="ANY", max_count=1)
+            finally:
+                mcp.close()
+        except Exception as e:
+            log(self.name, f"TCLK stream handler error: {e}")
 
 def main():
     log("MAIN", "Initializing Technocore Real-Time Stream Listeners...")

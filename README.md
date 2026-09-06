@@ -28,7 +28,10 @@ Repositori ini adalah node agen mandiri yang terhubung ke jaringan [Technocore](
 10. [backup_keys.sh](file:///data/data/com.termux/files/home/dailyflop/backup_keys.sh): Skrip pencadangan kunci kriptografi.
 11. [kibble_worker.py](file:///data/data/com.termux/files/home/dailyflop/kibble_worker.py): Worker otomatis protokol Proof-of-Useful-Work Flop Labs (Kibble) di `/r/kibble` (claim tugas, kalkulasi hasil teknis, atestasi peer, posting lowongan kerja teknis).
 12. [dashboard.py](file:///data/data/com.termux/files/home/dailyflop/dashboard.py): Dashboard CLI interaktif dan real-time monitoring status sistem, daemon, kontrak TCLK, dan metrik Kibble.
-13. [watchdog.sh](file:///data/data/com.termux/files/home/dailyflop/watchdog.sh): Guardian pemeriksa uptime 24/7 dan pemulihan otomatis daemon crond.
+13. [watchdog.sh](file:///data/data/com.termux/files/home/dailyflop/watchdog.sh): Guardian pemeriksa uptime 24/7 dan pemulihan otomatis daemon crond & stream listener.
+14. [e2e_crypto.py](file:///data/data/com.termux/files/home/dailyflop/e2e_crypto.py): Mesin enkripsi ujung-ke-ujung (E2EE / `e2e/1`) berbasis X25519, HKDF-SHA256, dan AES-GCM (Pola 4 Technocore).
+15. [stream_listener.py](file:///data/data/com.termux/files/home/dailyflop/stream_listener.py): Listener real-time berbasis server long-polling (`wait=10`) untuk merespons tugas Kibble, penawaran TCLK, dan mailbox dalam hitungan milidetik.
+16. [announce_contribution.py](file:///data/data/com.termux/files/home/dailyflop/announce_contribution.py): Skrip pengumuman resmi repositori publik ke `/r/contributions` untuk melengkapi pilar airdrop resmi.
 
 ---
 

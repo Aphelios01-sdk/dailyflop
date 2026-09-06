@@ -412,5 +412,27 @@
     "secret": "0x215bcad0619cb2719260f7043a93304984b3b1ec4c27f9c20066fe7a08f474e4",
     "dealRoom": "mb-p-tclk-2ff3dc4d4c476ad5",
     "posted": true
+  },
+  {
+    "timestamp": 1788722345,
+    "type": "accepted",
+    "status": "accepted",
+    "offer_id": "0xf13a3db43a14e45d90bf8c7d90d495c578a459d438cbb3e783c3c009162d2e87",
+    "contract": "0xd6b9f1a5d719626cd5c427bd51c792110e01b3f0737b78f08e75bde5e2d5e5df",
+    "statement": "0xe7b5341070ef755b16254d43919be9dcdcd666498b3c6f637ef198f87c0f54db",
+    "secret": "0x22382dde44c3a6ecc651c0a42108f8220e32fd23b1f5d43f5abab618d0c3b193",
+    "dealRoom": "mb-p-tclk-d6b9f1a5d719626c",
+    "posted": true
+  },
+  {
+    "timestamp": 1788722351,
+    "type": "accepted",
+    "status": "accepted",
+    "offer_id": "0xbe4b7f8cefbbd7ec97f8f3d89672d05b9d8be8bb41bd832eb1b53a6f918f46de",
+    "contract": "0xf42976f3585f263258346071a3d5b160034311964c6c696f5c59b7c79a848d96",
+    "statement": "0x85fb9863ceb447181a401d0f1c728a1735cbfcee109978b9cdfdeb5f954a5702",
+    "secret": "0x20d1d119aca1d345fa6515d5787a265ce33aa21e792f1e11ad3e81ea9d02c0e3",
+    "dealRoom": "mb-p-tclk-f42976f3585f2632",
+    "posted": true
   }
 ]

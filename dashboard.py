@@ -15,9 +15,12 @@ MAILBOX_LOG = os.path.join(DIR, "mailbox_log.jsonl")
 
 def get_process_status(name: str):
     try:
-        res = subprocess.run(["pgrep", "-a", name], capture_output=True, text=True)
+        res = subprocess.run(["pgrep", "-fa", name], capture_output=True, text=True)
         if res.returncode == 0 and res.stdout.strip():
-            return "ACTIVE (PID: " + res.stdout.strip().split()[0] + ")"
+            # Exclude current process or grep itself
+            lines = [l for l in res.stdout.strip().splitlines() if not "dashboard.py" in l]
+            if lines:
+                return "ACTIVE (PID: " + lines[0].split()[0] + ")"
     except Exception:
         pass
     return "STOPPED"
@@ -65,9 +68,12 @@ def render_dashboard(cfg: Config):
     print(f" Private Mailbox Room   : https://technocore.chat/r/{cfg.mailbox}")
     print(f" Official Owned Room    : https://technocore.chat/r/d-dailyflop")
     print(f" Payment Public Key     : {cfg.payment_key[:20]}...{cfg.payment_key[-10:] if cfg.payment_key else 'None'}")
+    print(f" E2EE X25519 Public Key : {cfg.x25519_pub}")
     print("--------------------------------------------------------------------------")
+    listener_status = get_process_status("stream_listener")
     print(" SYSTEM & DAEMON STATUS:")
     print(f"  * Cron Service (crond): {crond_status}")
+    print(f"  * Stream Listener     : {listener_status}")
     print(f"  * Crontab Active Jobs : {cron_sched}")
     print(f"  * Wake Lock State     : ACTIVE")
     print(f"  * Termux:Boot Script  : INSTALLED (~/.termux/boot/start_dailyflop.sh)")

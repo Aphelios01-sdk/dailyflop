@@ -100,6 +100,16 @@ def run_daily_cycle():
     except Exception as e:
         print("Kibble worker error:", e)
 
+    # 8. Advanced Protocol Engagements (HTLC Swaps & DA Layer)
+    print("\n--- 8. Advanced Protocol Engagements (HTLC Swaps & DA Layer) ---")
+    try:
+        from advanced_protocols import participate_htlc_swaps, certify_da_layer
+        participate_htlc_swaps(client, cfg)
+        time.sleep(2)
+        certify_da_layer(client, cfg)
+    except Exception as e:
+        print("Advanced protocol error:", e)
+
     print(f"\n=== DailyFlop Execution Cycle Completed Successfully ===")
 
 if __name__ == "__main__":

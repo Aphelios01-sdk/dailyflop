@@ -369,6 +369,80 @@ def check_and_lock_accepted_offers(mcp: TclkMcpClient, config: Config):
     if updated:
         save_contracts(contracts)
 
+def check_and_settle_payer_contracts(mcp: TclkMcpClient, config: Config):
+    """
+    For offers created and locked by our node as Payer:
+    Checks if the worker has posted reveal or solution in the dealRoom or tclk-offers.
+    If so, post receipt frame to officially settle and mark CLAIMED!
+    """
+    contracts = load_contracts()
+    locked_payer_contracts = [c for c in contracts if c.get("type") == "created_offer" and c.get("status") == "locked" and "contract" in c]
+    if not locked_payer_contracts:
+        return
+
+    updated = False
+    for c in locked_payer_contracts:
+        cid = c["contract"]
+        droom = c.get("dealRoom")
+        revealed = False
+        ref = cid
+        if droom:
+            room_data = mcp.call_tool("tclk_read_room", {"room": droom})
+            records = room_data.get("records", []) if isinstance(room_data, dict) else []
+            for r in records:
+                line = r.get("line", "")
+                if line.startswith("tclk1 ") and cid in line:
+                    try:
+                        f = json.loads(line[6:].strip())
+                        if f.get("type") == "reveal" and f.get("contract") == cid:
+                            revealed = True
+                            ref = f.get("ref", cid)
+                            break
+                    except Exception:
+                        pass
+
+        if revealed:
+            print(f"[Payer] Worker revealed secret for contract {cid[:16]}. Settling receipt...")
+            rcpt = mcp.call_tool("tclk_make_receipt", {
+                "contract": cid,
+                "from": config.did,
+                "outcome": "claimed",
+                "rail": "paper",
+                "ref": ref
+            })
+            if isinstance(rcpt, dict) and "line" in rcpt:
+                rcpt_line = rcpt["line"]
+                if droom:
+                    mcp.call_tool("tclk_post_frame", {"room": droom, "line": rcpt_line})
+                mcp.call_tool("tclk_post_frame", {"room": "tclk-offers", "line": rcpt_line})
+                c["status"] = "claimed"
+                c["settled_at"] = int(time.time())
+                updated = True
+                print(f"[Payer] Successfully settled contract {cid[:16]} to CLAIMED status!")
+
+    if updated:
+        save_contracts(contracts)
+
+def auto_manage_payer_cycle(mcp: TclkMcpClient, config: Config):
+    """
+    Automates Payer lifecycle:
+    1. Check for worker accepts and post locks
+    2. Check for worker reveals and post receipts (claiming)
+    3. Auto-creates a new task offer if active created offers < 2 (rate-limited to every 30m)
+    """
+    check_and_lock_accepted_offers(mcp, config)
+    check_and_settle_payer_contracts(mcp, config)
+
+    contracts = load_contracts()
+    created_offers = [c for c in contracts if c.get("type") == "created_offer"]
+    open_created = [c for c in created_offers if c.get("status") in ["open", None]]
+    now = int(time.time())
+
+    last_offer_ts = max([c.get("timestamp", 0) for c in created_offers], default=0)
+    if len(open_created) < 2 and (now - last_offer_ts > 1800):
+        print("[Payer] Auto-creating new task offer on tclk-offers...")
+        post_new_offer(mcp, config, amount="100", asset="FLOP")
+
 def print_status(mcp: TclkMcpClient, config: Config):
     who = mcp.call_tool("tclk_whoami", {})
     print("=== TCLK MCP Status ===")
@@ -418,20 +492,20 @@ def main():
             accept_open_offers(mcp, cfg, target_asset=args.asset)
         elif args.resolve:
             resolve_locked_contracts(mcp, cfg)
-            check_and_lock_accepted_offers(mcp, cfg)
+            auto_manage_payer_cycle(mcp, cfg)
         elif args.loop:
             print(f"Starting continuous worker loop every {args.interval} seconds...")
             while True:
                 accept_open_offers(mcp, cfg, target_asset=args.asset)
                 time.sleep(5)
                 resolve_locked_contracts(mcp, cfg)
-                check_and_lock_accepted_offers(mcp, cfg)
+                auto_manage_payer_cycle(mcp, cfg)
                 time.sleep(args.interval)
         else:
-            # Default: accept, resolve, and print status
+            # Default: accept, resolve, manage payer lifecycle, and print status
             accept_open_offers(mcp, cfg, target_asset=args.asset)
             resolve_locked_contracts(mcp, cfg)
-            check_and_lock_accepted_offers(mcp, cfg)
+            auto_manage_payer_cycle(mcp, cfg)
             print()
             print_status(mcp, cfg)
     finally:

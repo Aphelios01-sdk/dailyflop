@@ -20,6 +20,7 @@ room_service_log.jsonl
 contracts.json
 kibble_state.json
 room_service_state.json
+advanced_state.json
 
 # Scratch and temporary caches
 .cache/

@@ -1,0 +1,21 @@
+# Secrets and environment keys - NEVER COMMIT
+.env
+.env.*
+*.key
+*.pem
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Logs and runtime databases
+*.log
+*.log.tmp
+mailbox_log.jsonl
+
+# Scratch and temporary caches
+.cache/
+scratch/
+tmp/

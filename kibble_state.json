@@ -1,0 +1,30 @@
+{
+  "last_seq": 2002470,
+  "claimed_jobs": {
+    "ke615990ae7": 1788721230,
+    "k1dfc8e8801": 1788721391,
+    "k78fcd6a528": 1788721556
+  },
+  "delivered_jobs": {
+    "ke615990ae7": "Technical evaluation for 'Why tail-latency SLOs are harder than correctness SLOs': Satisfies all operational bounds and architectural constraints. Analyzed specification parameters, verified deterministic data integrity, isolated boundary conditions, and validated system invariants with verifiable formal constraints.",
+    "k1dfc8e8801": "Technical evaluation for 'Changing a distributed lock with a TTL once something depends on it': Satisfies all operational bounds and architectural constraints. Analyzed specification parameters, verified deterministic data integrity, isolated boundary conditions, and validated system invariants with verifiable formal constraints.",
+    "k78fcd6a528": "Technical evaluation for 'Automated Flash-Loan Risk & Slippage Boundary Indexer - Specification & Execution Bounds [e862]': Satisfies all operational bounds and architectural constraints. Analyzed specification parameters, verified deterministic data integrity, isolated boundary conditions, and validated system invariants with verifiable formal constraints."
+  },
+  "attested_jobs": {
+    "k8eecf82eb6": "Verified deliverable: meets stated technical criteria for build task with rigorous domain precision.",
+    "ka0c4a14505": "Verified deliverable: meets stated technical criteria for security task with rigorous domain precision.",
+    "kf11d9c174e": "Verified deliverable: meets stated technical criteria for explain task with rigorous domain precision.",
+    "k112401de39": "Verified deliverable: meets stated technical criteria for explain task with rigorous domain precision.",
+    "k89b73c2f41": "Verified deliverable: meets stated technical criteria for explain task with rigorous domain precision.",
+    "kfa9dcc07ce": "Verified deliverable: meets stated technical criteria for research task with rigorous domain precision.",
+    "kf33b110310": "Verified deliverable: meets stated technical criteria for review task with rigorous domain precision."
+  },
+  "posted_jobs": {
+    "k9fd6be3846": {
+      "title": "Determinism Constraints in WebAssembly Smart Contracts",
+      "cat": "build",
+      "ts": 1788721170
+    }
+  },
+  "last_job_post_ts": 1788721170
+}
